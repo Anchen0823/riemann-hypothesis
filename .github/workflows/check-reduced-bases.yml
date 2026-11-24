@@ -1,0 +1,36 @@
+name: Check reduced basis proofs
+on:
+  push:
+    branches: [verify/gram-schmidt-reduction]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      MATHLIB_CACHE_GET_URL: https://cache.mathlib.org/mathlib4
+      MATHLIB_NO_CACHE_ON_UPDATE: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          sparse-checkout: src/ReciprocityTheory/ReducedBases
+      - name: Install pinned Lean
+        run: |
+          curl -fsSL --retry 3 https://elan.lean-lang.org/elan-init.sh -o "$RUNNER_TEMP/install-elan.sh"
+          sh "$RUNNER_TEMP/install-elan.sh" -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+          "$HOME/.elan/bin/lean" --version
+      - name: Fetch the Mathlib dependencies of the reduced basis modules
+        run: |
+          mapfile -t deps < <(sed -nE 's/^(public )?import (Mathlib[^ ]*)$/\2/p' src/ReciprocityTheory/ReducedBases/*.lean | sort -u)
+          lake exe mathlib/cache get "${deps[@]}"
+      - name: Build all seven reduced basis modules
+        run: |
+          targets=()
+          for file in src/ReciprocityTheory/ReducedBases/*.lean; do
+            name=$(basename "$file" .lean)
+            targets+=("+ReciprocityTheory.ReducedBases.$name")
+          done
+          lake build "${targets[@]}"
