@@ -88,7 +88,7 @@ lemma b_eq_sum (b : Fin d → E) (hb : LinearIndependent ℝ b) (i : Fin d) :
   calc
     b i = gs b i + ∑ j ∈ Iio i, mu b i j • gs b j := gramSchmidt_def'' ℝ b i
     _ = ∑ j ∈ Iic i, mu b i j • gs b j := by
-      rw [← Iio_insert, sum_insert (by simp), mu_self b hb, one_smul]
+      rw [← insert_Iio, sum_insert (by simp), mu_self b hb, one_smul]
     _ = ∑ j, mu b i j • gs b j := sum_subset (subset_univ _) fun j _ hj => by
       rw [mu_of_lt b (lt_of_not_ge (fun h => hj (mem_Iic.mpr h))), zero_smul]
 
